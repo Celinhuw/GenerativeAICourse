@@ -1,0 +1,96 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Account {
+  id          String   @id @default(cuid())
+  name        String
+  broker      String
+  accountNumber String?
+  initialBalance Float  @default(0)
+  currentBalance Float  @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  trades      Trade[]
+}
+
+model Trade {
+  id              String   @id @default(cuid())
+  accountId       String
+  account         Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  // Basic trade info
+  symbol          String
+  side            String   // LONG or SHORT
+  quantity        Float
+  entryPrice      Float
+  exitPrice       Float?
+  entryTime       DateTime
+  exitTime        DateTime?
+
+  // P&L
+  grossPnL        Float    @default(0)
+  commission      Float    @default(0)
+  fees            Float    @default(0)
+  netPnL          Float    @default(0)
+
+  // Trade quality
+  setup           String?
+  strategy        String?
+  timeframe       String?
+  notes           String?
+  mistakes        String?
+  lessonsLearned  String?
+
+  // Screenshots/Charts
+  screenshots     Screenshot[]
+
+  // Tags
+  tags            Tag[]
+
+  // Performance metrics
+  rMultiple       Float?
+  winLoss         String?  // WIN, LOSS, BREAKEVEN
+
+  // NinjaTrader specific fields
+  ninjaTraderOrderId String?
+  execution       String?  // MARKET, LIMIT, STOP, etc.
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([accountId])
+  @@index([symbol])
+  @@index([entryTime])
+}
+
+model Screenshot {
+  id          String   @id @default(cuid())
+  tradeId     String
+  trade       Trade    @relation(fields: [tradeId], references: [id], onDelete: Cascade)
+
+  url         String
+  description String?
+  uploadedAt  DateTime @default(now())
+
+  @@index([tradeId])
+}
+
+model Tag {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  color       String   @default("#3b82f6")
+
+  trades      Trade[]
+
+  createdAt   DateTime @default(now())
+}
